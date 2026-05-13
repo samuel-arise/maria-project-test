@@ -4,22 +4,32 @@ import os
 
 def main():
     # 1. Load the Apify JSON export
-    # We will check for both common naming conventions just in case
-    file_path = 'data/raw/apify_tweets_raw.json'
-    if not os.path.exists(file_path):
-        file_path = 'data/raw/apify_x_data.json'
-        
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            raw = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Could not find the Apify JSON file. Ensure it is in the data/raw/ folder.")
+    # Prioritizing your specific filename (apify_x_data) and adding fallbacks
+    file_paths_to_try = [
+        'data/raw/apify_x_data.json',
+        'data/raw/apify_x_data',       # In case it saved without the .json extension
+        'data/raw/x_data.json',
+        'data/raw/apify_tweets_raw.json'
+    ]
+    
+    file_path = None
+    for path in file_paths_to_try:
+        if os.path.exists(path):
+            file_path = path
+            break
+            
+    if not file_path:
+        print("Error: Could not find 'apify_x_data.json'. Ensure it is in the data/raw/ folder.")
         return
 
-    print('Loaded JSON file. Flattening data structure...')
+    print(f'Loading JSON file from {file_path}. Flattening data structure...')
 
-    # 2. Smart Flattening Function
-    # This handles the "list inside a list" error you experienced
+    # 2. Load JSON data
+    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+        raw = json.load(f)
+
+    # 3. Smart Flattening Function
+    # This handles the "list inside a list" error
     flat_records = []
     def flatten_data(item):
         if isinstance(item, list):
@@ -41,8 +51,15 @@ def main():
         author_data = item.get('author') or item.get('user') or {}
         if isinstance(author_data, dict):
             author = author_data.get('userName') or author_data.get('name') or author_data.get('screen_name') or 'Unknown'
+            # Extract location from author dictionary
+            location = author_data.get('location') or ''
         else:
             author = str(author_data)
+            location = ''
+
+        # If location wasn't in author data, check root level just in case
+        if not location:
+            location = item.get('location') or item.get('user_location') or ''
 
         # Safely grab metrics
         published_at = item.get('createdAt') or item.get('created_at', '')
@@ -55,6 +72,7 @@ def main():
                 'outlet':       classify_outlet(text),
                 'text':         text,
                 'author':       author,
+                'user_location': location,  # <--- Added location extraction!
                 'published_at': published_at,
                 'likes':        likes,
                 'reply_count':  reply_count,
@@ -66,8 +84,8 @@ def main():
     print(f'Valid records after filtering: {len(df)}')
     
     if len(df) > 0:
-        print("\nFirst 3 rows of processed data:")
-        print(df[['outlet', 'text', 'author']].head(3))
+        print("\nFirst 3 rows of processed data (including location):")
+        print(df[['outlet', 'author', 'user_location']].head(3))
 
     # 5. Save the output
     os.makedirs('data/raw', exist_ok=True)
