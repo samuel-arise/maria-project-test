@@ -13,9 +13,11 @@ from dotenv import load_dotenv
 # Set random seed for langdetect for reproducible results
 DetectorFactory.seed = 0
 
-# Load environment variables (expecting YOUTUBE_API_KEY)
-load_dotenv()
+load_dotenv(override=True)  # <--- This forces it to read the new file!
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
+
+# Let's print the first 10 characters to PROVE it's using the new key
+print(f"DEBUG: Using API Key starting with: {YOUTUBE_API_KEY[:10]}...")
 
 # File Paths
 RAW_DATA_PATH = 'data/raw/comments_raw.csv'
@@ -212,50 +214,13 @@ def parse_x_location(location_str):
     return None, None
 
 def get_youtube_channel_location(youtube_service, channel_name):
-    """Tier 2: Queries YouTube API to find the country code of a channel."""
-    if not youtube_service or pd.isna(channel_name):
-        return None, None
-        
-    try:
-        # Note: 'author' in comments is often the display name, not channel ID.
-        # This search is approximate and often fails to find a specific country,
-        # but satisfies the methodological transparency requirement.
-        search_response = youtube_service.search().list(
-            q=channel_name,
-            type='channel',
-            part='id',
-            maxResults=1
-        ).execute()
-
-        if not search_response.get('items'):
-            return None, None
-            
-        channel_id = search_response['items'][0]['id']['channelId']
-        
-        channel_response = youtube_service.channels().list(
-            id=channel_id,
-            part='snippet'
-        ).execute()
-        
-        if not channel_response.get('items'):
-            return None, None
-            
-        country_code = channel_response['items'][0]['snippet'].get('country')
-        
-        if country_code:
-            try:
-                country_name = pycountry.countries.get(alpha_2=country_code).name
-            except Exception:
-                country_name = f"Unknown Code: {country_code}"
-                
-            region = ISO_TO_REGION.get(country_code, 'Other / Unknown Region')
-            return region, country_name
-            
-        return None, None
-        
-    except Exception as e:
-        print(f"  [API Error searching for {channel_name}]: {e}")
-        return None, None
+    """Tier 2: Queries YouTube API to find the country code of a channel.
+    
+    NOTE: Bypassed. The YouTube Search API costs 100 quota units per query. 
+    Mathematically unfeasible for datasets > 100 rows on the free tier. 
+    Script will automatically fall back to Tier 1 (Profile) and Tier 3 (Linguistic Proxy).
+    """
+    return None, None
 
 def detect_language_proxy(text):
     """Tier 3: Fallback proxy using language detection."""
