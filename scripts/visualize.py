@@ -107,20 +107,72 @@ def chart_wordcloud():
 
 # ── Chart 5: Language Distribution ───────────────────────────
 def chart_language_distribution():
-    if not os.path.exists('data/cleaned/comments_with_language.csv'):
-        print('Language data not found. Run 05_language.py first.')
+    lang_file = 'data/cleaned/comments_with_language.csv'
+
+    if not os.path.exists(lang_file):
+        print('Chart 5 skipped: comments_with_language.csv not found.')
         return
 
-    df_lang = pd.read_csv('data/cleaned/comments_with_language.csv')
-    lang_counts = df_lang['language_code'].value_counts().head(10)
+    df_lang = pd.read_csv(lang_file)
+
+    if 'language_code' not in df_lang.columns:
+        print('Chart 5 skipped: language_code column not found.')
+        return
 
     LANGUAGE_LABELS = {
-        'en': 'English', 'fr': 'French', 'ar': 'Arabic',
-        'pt': 'Portuguese', 'es': 'Spanish', 'de': 'German',
-        'yo': 'Yoruba', 'ha': 'Hausa', 'ig': 'Igbo',
-        'sw': 'Swahili', 'hi': 'Hindi', 'zh-cn': 'Chinese',
-        'ru': 'Russian', 'id': 'Indonesian', 'tl': 'Filipino',
-    }
+    'en': 'English',
+    'fr': 'French',
+    'ar': 'Arabic',
+    'pt': 'Portuguese',
+    'es': 'Spanish',
+    'de': 'German',
+    'yo': 'Yoruba',
+    'ha': 'Hausa',
+    'ig': 'Igbo',
+    'sw': 'Swahili',
+    'hi': 'Hindi',
+    'zh-cn': 'Chinese',
+    'ru': 'Russian',
+    'id': 'Indonesian',
+    'tl': 'Filipino',
+    'af': 'Afrikaans',
+    'so': 'Somali',
+    'cy': 'Welsh',
+    'da': 'Danish',
+    'nl': 'Dutch',
+    'it': 'Italian',
+    'tr': 'Turkish',
+    'ko': 'Korean',
+    'ja': 'Japanese',
+    'vi': 'Vietnamese',
+    'pl': 'Polish',
+    'sv': 'Swedish',
+    'no': 'Norwegian',
+    'fi': 'Finnish',
+    'ro': 'Romanian',
+    'uk': 'Ukrainian',
+    'ms': 'Malay',
+    'th': 'Thai',
+    'ur': 'Urdu',
+    'bn': 'Bengali',
+    'am': 'Amharic',
+    'zu': 'Zulu',
+    'xh': 'Xhosa',
+    'ca': 'Catalan',
+    'hr': 'Croatian',
+    'sk': 'Slovak',
+    'sl': 'Slovenian',
+    'bg': 'Bulgarian',
+    'sr': 'Serbian',
+    'lt': 'Lithuanian',
+    'lv': 'Latvian',
+    'et': 'Estonian',
+    'he': 'Hebrew',
+    'fa': 'Persian',
+    'unknown': 'Unknown',
+}
+
+    lang_counts = df_lang['language_code'].value_counts().head(10)
 
     fig, ax = plt.subplots(figsize=(12, 6))
     bars = ax.bar(
@@ -139,6 +191,7 @@ def chart_language_distribution():
         fontsize=14, fontweight='bold'
     )
     ax.set_ylabel('Number of Comments', fontsize=11)
+    ax.set_xlabel('Detected Language', fontsize=11)
 
     for bar, count in zip(bars, lang_counts.values):
         ax.text(
@@ -154,19 +207,84 @@ def chart_language_distribution():
     print('Chart 5 saved: Language Distribution')
 
 
-# ── Chart 6: Regional Distribution ───────────────────────────
-def chart_regional_distribution():
-    if not os.path.exists('data/cleaned/comments_with_geo.csv'):
-        print('Geographic data not found. Run 06_geo_lookup.py first.')
+# ── Chart 6: Language vs Sentiment Heatmap ───────────────────
+def chart_language_sentiment_heatmap():
+    lang_file      = 'data/cleaned/comments_with_language.csv'
+    sentiment_file = 'data/cleaned/comments_sentiment.csv'
+
+    if not os.path.exists(lang_file):
+        print('Chart 6 skipped: comments_with_language.csv not found.')
         return
 
-    df_geo = pd.read_csv('data/cleaned/comments_with_geo.csv')
+    if not os.path.exists(sentiment_file):
+        print('Chart 6 skipped: comments_sentiment.csv not found.')
+        return
+
+    df_lang      = pd.read_csv(lang_file)
+    df_sentiment = pd.read_csv(sentiment_file)
+
+    if 'language_code' not in df_lang.columns:
+        print('Chart 6 skipped: language_code column missing.')
+        return
+
+    # Merge language into sentiment dataframe by index
+    df_merged = df_sentiment.copy()
+    df_merged['language_code'] = df_lang['language_code'].values
+
+    # Keep only top 8 languages for readability
+    top_langs = df_merged['language_code'].value_counts().head(8).index.tolist()
+    df_filtered = df_merged[df_merged['language_code'].isin(top_langs)]
+
+    pivot = df_filtered.groupby(
+        ['language_code', 'sentiment_label']
+    ).size().unstack(fill_value=0)
+
+    # Normalize to percentages
+    pivot_pct = pivot.div(pivot.sum(axis=1), axis=0) * 100
+
+    import seaborn as sns
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.heatmap(
+        pivot_pct,
+        annot=True,
+        fmt='.1f',
+        cmap='RdYlGn',
+        ax=ax,
+        linewidths=0.5,
+        cbar_kws={'label': 'Percentage of Comments (%)'}
+    )
+    ax.set_title(
+        'Sentiment by Language Group\n(% of comments per language)',
+        fontsize=13, fontweight='bold'
+    )
+    ax.set_xlabel('Sentiment Label', fontsize=11)
+    ax.set_ylabel('Language Code', fontsize=11)
+    plt.tight_layout()
+    plt.savefig('outputs/charts/06_language_sentiment_heatmap.png', dpi=150)
+    plt.close()
+    print('Chart 6 saved: Language Sentiment Heatmap')
+
+
+# ── Chart 7: Regional Distribution Pie Chart ─────────────────
+def chart_regional_distribution():
+    geo_file = 'data/cleaned/comments_with_geo.csv'
+
+    if not os.path.exists(geo_file):
+        print('Chart 7 skipped: comments_with_geo.csv not found.')
+        return
+
+    df_geo = pd.read_csv(geo_file)
+
+    if 'region' not in df_geo.columns:
+        print('Chart 7 skipped: region column missing.')
+        return
+
     region_data = df_geo[
         df_geo['region'].notna() & (df_geo['region'] != 'Unknown')
     ]['region'].value_counts()
 
     if len(region_data) == 0:
-        print('No verified geographic data found. Skipping regional chart.')
+        print('Chart 7 skipped: no verified region data found.')
         return
 
     colors = [
@@ -188,25 +306,32 @@ def chart_regional_distribution():
         fontsize=14, fontweight='bold', pad=20
     )
     plt.tight_layout()
-    plt.savefig('outputs/charts/06_regional_distribution.png', dpi=150)
+    plt.savefig('outputs/charts/07_regional_distribution.png', dpi=150)
     plt.close()
-    print('Chart 6 saved: Regional Distribution')
+    print('Chart 7 saved: Regional Distribution')
 
 
-# ── Chart 7: Top Countries ────────────────────────────────────
+# ── Chart 8: Top 15 Countries ─────────────────────────────────
 def chart_top_countries():
-    if not os.path.exists('data/cleaned/comments_with_geo.csv'):
-        print('Geographic data not found. Run 06_geo_lookup.py first.')
+    geo_file = 'data/cleaned/comments_with_geo.csv'
+
+    if not os.path.exists(geo_file):
+        print('Chart 8 skipped: comments_with_geo.csv not found.')
         return
 
-    df_geo = pd.read_csv('data/cleaned/comments_with_geo.csv')
+    df_geo = pd.read_csv(geo_file)
+
+    if 'country_name' not in df_geo.columns:
+        print('Chart 8 skipped: country_name column missing.')
+        return
+
     country_counts = df_geo[
         df_geo['country_name'].notna() &
         (df_geo['country_name'] != 'Not Specified')
     ]['country_name'].value_counts().head(15)
 
     if len(country_counts) == 0:
-        print('No verified country data found. Skipping country chart.')
+        print('Chart 8 skipped: no verified country data found.')
         return
 
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -234,17 +359,79 @@ def chart_top_countries():
         )
 
     plt.tight_layout()
-    plt.savefig('outputs/charts/07_top_countries.png', dpi=150)
+    plt.savefig('outputs/charts/08_top_countries.png', dpi=150)
     plt.close()
-    print('Chart 7 saved: Top Countries')
-  
-# Run all charts
+    print('Chart 8 saved: Top Countries')
+
+
+# ── Chart 9: Sentiment by Region ─────────────────────────────
+def chart_sentiment_by_region():
+    geo_file       = 'data/cleaned/comments_with_geo.csv'
+    sentiment_file = 'data/cleaned/comments_sentiment.csv'
+
+    if not os.path.exists(geo_file):
+        print('Chart 9 skipped: comments_with_geo.csv not found.')
+        return
+
+    if not os.path.exists(sentiment_file):
+        print('Chart 9 skipped: comments_sentiment.csv not found.')
+        return
+
+    df_geo       = pd.read_csv(geo_file)
+    df_sentiment = pd.read_csv(sentiment_file)
+
+    if 'region' not in df_geo.columns:
+        print('Chart 9 skipped: region column missing.')
+        return
+
+    # Merge region into sentiment data by index
+    df_merged = df_sentiment.copy()
+    df_merged['region'] = df_geo['region'].values
+
+    df_filtered = df_merged[
+        df_merged['region'].notna() & (df_merged['region'] != 'Unknown')
+    ]
+
+    if len(df_filtered) == 0:
+        print('Chart 9 skipped: no region data available to plot.')
+        return
+
+    pivot = df_filtered.groupby(
+        ['region', 'sentiment_label']
+    ).size().unstack(fill_value=0)
+
+    pivot_pct = pivot.div(pivot.sum(axis=1), axis=0) * 100
+
+    ax = pivot_pct.plot(
+        kind='bar',
+        color=['#E74C3C', '#F39C12', '#27AE60'],
+        figsize=(12, 6),
+        edgecolor='white',
+        width=0.7
+    )
+    ax.set_title(
+        'Sentiment Distribution by World Region\n(% of comments per region)',
+        fontsize=14, fontweight='bold'
+    )
+    ax.set_xlabel('World Region', fontsize=11)
+    ax.set_ylabel('Percentage of Comments (%)', fontsize=11)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
+    ax.legend(title='Sentiment')
+    plt.tight_layout()
+    plt.savefig('outputs/charts/09_sentiment_by_region.png', dpi=150)
+    plt.close()
+    print('Chart 9 saved: Sentiment by Region')
+
+
+# ── Run All Charts ────────────────────────────────────────────
 chart_overall_distribution()
 chart_outlet_comparison()
 chart_compound_histogram()
 chart_wordcloud()
 chart_language_distribution()
+chart_language_sentiment_heatmap()
 chart_regional_distribution()
 chart_top_countries()
+chart_sentiment_by_region()
 
-print('\nAll charts generated in outputs/charts/')
+print('\nAll available charts generated in outputs/charts/')

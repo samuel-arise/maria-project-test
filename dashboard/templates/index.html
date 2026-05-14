@@ -1,316 +1,420 @@
-<!DOCTYPE html> 
-<html lang='en'> 
-<head> 
-  <meta charset='UTF-8'> 
-  <meta name='viewport' content='width=device-width, initial-scale=1.0'> 
-  <title>Natasha-Akpabio Saga — Sentiment Analysis Dashboard</title> 
-  <script src='https://cdn.jsdelivr.net/npm/chart.js'></script> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Natasha-Akpabio Saga — Sentiment Analysis Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
 
-  <style> 
-    * { margin: 0; padding: 0; box-sizing: border-box; } 
-    body { font-family: 'Segoe UI', sans-serif; 
-           background: #0f0f1a; color: #e0e0e0; min-height: 100vh; } 
-  
-    header { background: linear-gradient(135deg, #1a1a2e, #16213e); 
-             padding: 30px 40px; border-bottom: 2px solid #2E86AB; } 
-    header h1 { font-size: 1.8rem; color: #fff; } 
-    header p  { color: #aaa; margin-top: 6px; font-size: 0.95rem; } 
-  
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); 
-                  gap: 20px; padding: 30px 40px; } 
-    .stat-card  { background: #1e1e2e; border-radius: 12px; 
-                  padding: 24px; border-left: 4px solid #2E86AB; } 
-    .stat-card .label { color: #aaa; font-size: 0.85rem; margin-bottom: 8px; } 
-    .stat-card .value { font-size: 2rem; font-weight: bold; color: #fff; } 
-    .stat-card.positive { border-left-color: #27AE60; } 
-    .stat-card.negative { border-left-color: #E74C3C; } 
-    .stat-card.neutral  { border-left-color: #F39C12; } 
-  
-    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; 
-                   gap: 24px; padding: 0 40px 30px; } 
-    .chart-card  { background: #1e1e2e; border-radius: 12px; padding: 24px; } 
-    .chart-card h3 { font-size: 1rem; color: #aaa; margin-bottom: 16px; } 
-  
-    .filters { padding: 0 40px 20px; 
-               display: flex; gap: 16px; align-items: center; } 
-    .filters select { background: #1e1e2e; color: #e0e0e0; 
-                      border: 1px solid #2E86AB; border-radius: 8px; 
-                      padding: 10px 16px; font-size: 0.9rem; cursor: pointer; } 
-    .filters label  { color: #aaa; font-size: 0.9rem; } 
-  
-    .comments-section { padding: 0 40px 40px; } 
-    .comment-card { background: #1e1e2e; border-radius: 10px; 
-                    padding: 16px 20px; margin-bottom: 12px; 
-                    border-left: 4px solid #2E86AB; } 
-    .comment-card.Positive { border-left-color: #27AE60; } 
-    .comment-card.Negative { border-left-color: #E74C3C; } 
-    .comment-card.Neutral  { border-left-color: #F39C12; } 
-    .comment-meta { display: flex; gap: 12px; margin-bottom: 8px; 
-                    font-size: 0.8rem; color: #888; } 
-    .badge { padding: 2px 10px; border-radius: 20px; 
-             font-size: 0.75rem; font-weight: bold; } 
-    .badge.Positive { background: #1a4731; color: #27AE60; } 
-    .badge.Negative { background: #4a1515; color: #E74C3C; } 
-    .badge.Neutral  { background: #4a3a10; color: #F39C12; } 
-    .comment-text { font-size: 0.9rem; line-height: 1.6; color: #ccc; } 
-    .compound-score { color: #2E86AB; font-weight: bold; } 
-  
-    .pagination { display: flex; gap: 10px; 
-                  justify-content: center; padding: 20px; } 
-    .pagination button { background: #1e1e2e; color: #e0e0e0; 
-                         border: 1px solid #2E86AB; border-radius: 8px; 
-                         padding: 8px 20px; cursor: pointer; font-size: 0.9rem; } 
-    .pagination button:hover { background: #2E86AB; } 
-  </style> 
+    header { background: linear-gradient(135deg, #1a1a2e, #16213e);
+             padding: 30px 40px; border-bottom: 2px solid #2E86AB; }
+    header h1 { font-size: 1.8rem; color: #fff; }
+    header p  { color: #aaa; margin-top: 6px; font-size: 0.95rem; }
 
-</head> 
-<body> 
-  
-  <header> 
-    <h1>Maria's Final Year Project</h1> 
-    <h1>Natasha-Akpabio Saga — Sentiment Analysis Dashboard</h1> 
-    <p>International Audience Sentiment Analysis | BBC, Al Jazeera Coverage, TVC & Channels | 2025</p> 
-  </header> 
-  
-  <!-- Stats Cards --> 
-  <div class='stats-grid'> 
-    <div class="stat-card" style="border-left-color: #8E44AD;">
-  <div class="label">Verified Locations</div>
-  <div class="value" id="verified-count">—</div>
-</div>
-    <div class='stat-card'> 
-      <div class='label'>Total Comments Analysed</div> 
-      <div class='value' id='total'>—</div> 
-    </div> 
-    <div class='stat-card positive'> 
-      <div class='label'>Positive Comments</div> 
-      <div class='value' id='pos-count'>—</div> 
-    </div> 
-    <div class='stat-card negative'> 
-      <div class='label'>Negative Comments</div> 
-      <div class='value' id='neg-count'>—</div> 
-    </div> 
-    <div class='stat-card neutral'> 
-      <div class='label'>Average Compound Score</div> 
-      <div class='value' id='avg-compound'>—</div> 
-    </div> 
-  </div> 
-  
-  <!-- Charts --> 
-  <div class='charts-grid'> 
-    <!-- Language Distribution Chart -->
-<div class="chart-card">
-  <h3>Language Distribution of Comments</h3>
-  <canvas id="languageChart"></canvas>
-</div>
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr);
+                  gap: 20px; padding: 30px 40px; }
+    .stat-card  { background: #1e1e2e; border-radius: 12px;
+                  padding: 24px; border-left: 4px solid #2E86AB; }
+    .stat-card .label { color: #aaa; font-size: 0.85rem; margin-bottom: 8px; }
+    .stat-card .value { font-size: 1.8rem; font-weight: bold; color: #fff; }
+    .stat-card.positive { border-left-color: #27AE60; }
+    .stat-card.negative { border-left-color: #E74C3C; }
+    .stat-card.neutral  { border-left-color: #F39C12; }
+    .stat-card.geo      { border-left-color: #8E44AD; }
 
-<!-- Regional Distribution Chart -->
-<div class="chart-card">
-  <h3>Regional Distribution of Commenters</h3>
-  <canvas id="regionalChart"></canvas>
-  <p id="geo-coverage" style="color:#aaa; font-size:0.8rem; margin-top:10px; text-align:center;"></p>
-</div>
+    .section-title { padding: 10px 40px 0;
+                     font-size: 0.75rem; font-weight: bold;
+                     letter-spacing: 2px; text-transform: uppercase;
+                     color: #2E86AB; }
 
-    <div class='chart-card'> 
-      <h3>Overall Sentiment Distribution</h3> 
-      <canvas id='pieChart'></canvas> 
-    </div> 
-    <div class='chart-card'> 
-      <h3>BBC vs Al Jazeera Sentiment Comparison</h3> 
-      <canvas id='barChart'></canvas> 
-    </div> 
-  </div> 
-  
-  <!-- Filters --> 
-  <div class='filters'> 
-    <label>Filter by Sentiment:</label> 
-    <select id='sentimentFilter' onchange='loadComments(1)'> 
-      <option value='all'>All</option> 
-      <option value='Positive'>Positive</option> 
-      <option value='Negative'>Negative</option> 
-      <option value='Neutral'>Neutral</option> 
-    </select> 
-    <label>Filter by Outlet:</label> 
-    <select id='outletFilter' onchange='loadComments(1)'> 
-      <option value='all'>All Outlets</option> 
-      <option value='BBC'>BBC</option> 
-      <option value='Al_Jazeera'>Al Jazeera</option> 
-      <option value='TVC'>TVC</option>
-      <option value='Channels'>Channels</option>  
-    </select> 
-  </div> 
-  
-  <!-- Comments --> 
-  <div class='comments-section'> 
-    <div id='comments-list'></div> 
-    <div class='pagination'> 
-      <button onclick='prevPage()'>Previous</button> 
-      <span id='page-info' style='color:#aaa; padding: 8px 16px;'></span> 
-      <button onclick='nextPage()'>Next</button> 
-    </div> 
-  </div> 
-  
-  <script> 
-    let currentPage = 1; 
-    let totalComments = 0; 
-    const perPage = 20; 
-  
-    async function loadSummary() { 
-      async function loadGeoData() {
-    // Load language data
-    const langRes = await fetch('/api/language');
-    const langData = await langRes.json();
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr;
+                   gap: 24px; padding: 16px 40px 30px; }
+    .chart-card  { background: #1e1e2e; border-radius: 12px; padding: 24px;
+                   min-height: 320px; display: flex; flex-direction: column; }
+    .chart-card h3 { font-size: 0.9rem; color: #aaa; margin-bottom: 16px; }
+    .chart-card.full-width { grid-column: span 2; }
 
-    if (!langData.error) {
-        new Chart(document.getElementById('languageChart'), {
-            type: 'bar',
-            data: {
-                labels: langData.labels,
-                datasets: [{
-                    label: 'Comments',
-                    data: langData.values,
-                    backgroundColor: '#8E44AD',
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { ticks: { color: '#aaa', maxRotation: 30 }, grid: { color: '#333' } },
-                    y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
-                }
-            }
+    .placeholder { flex: 1; display: flex; align-items: center;
+                   justify-content: center; color: #555;
+                   font-size: 0.85rem; font-style: italic; text-align: center;
+                   padding: 20px; }
+
+    .filters { padding: 0 40px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .filters select { background: #1e1e2e; color: #e0e0e0;
+                      border: 1px solid #2E86AB; border-radius: 8px;
+                      padding: 10px 16px; font-size: 0.9rem; cursor: pointer; }
+    .filters label  { color: #aaa; font-size: 0.9rem; }
+
+    .comments-section { padding: 0 40px 40px; }
+    .comment-card { background: #1e1e2e; border-radius: 10px;
+                    padding: 16px 20px; margin-bottom: 12px;
+                    border-left: 4px solid #2E86AB; }
+    .comment-card.Positive { border-left-color: #27AE60; }
+    .comment-card.Negative { border-left-color: #E74C3C; }
+    .comment-card.Neutral  { border-left-color: #F39C12; }
+    .comment-meta { display: flex; gap: 12px; margin-bottom: 8px;
+                    font-size: 0.8rem; color: #888; flex-wrap: wrap; }
+    .badge { padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+    .badge.Positive { background: #1a4731; color: #27AE60; }
+    .badge.Negative { background: #4a1515; color: #E74C3C; }
+    .badge.Neutral  { background: #4a3a10; color: #F39C12; }
+    .comment-text { font-size: 0.9rem; line-height: 1.6; color: #ccc; }
+    .compound-score { color: #2E86AB; font-weight: bold; }
+
+    .pagination { display: flex; gap: 10px; justify-content: center; padding: 20px; }
+    .pagination button { background: #1e1e2e; color: #e0e0e0;
+                         border: 1px solid #2E86AB; border-radius: 8px;
+                         padding: 8px 20px; cursor: pointer; font-size: 0.9rem; }
+    .pagination button:hover { background: #2E86AB; }
+
+    .geo-note { color: #666; font-size: 0.78rem;
+                margin-top: 10px; text-align: center; font-style: italic; }
+
+    @media (max-width: 900px) {
+      .stats-grid  { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-card.full-width { grid-column: span 1; }
+      header, .filters, .comments-section,
+      .charts-grid, .stats-grid, .section-title { padding-left: 20px; padding-right: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Natasha-Akpabio Saga — Sentiment Analysis Dashboard</h1>
+    <p>International Audience Sentiment Analysis &nbsp;|&nbsp; BBC & Al Jazeera Coverage &nbsp;|&nbsp; 2025</p>
+  </header>
+
+  <!-- ── Stats Row ───────────────────────────────────────────── -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Total Comments Analysed</div>
+      <div class="value" id="total">—</div>
+    </div>
+    <div class="stat-card positive">
+      <div class="label">Positive Comments</div>
+      <div class="value" id="pos-count">—</div>
+    </div>
+    <div class="stat-card negative">
+      <div class="label">Negative Comments</div>
+      <div class="value" id="neg-count">—</div>
+    </div>
+    <div class="stat-card neutral">
+      <div class="label">Average Compound Score</div>
+      <div class="value" id="avg-compound">—</div>
+    </div>
+    <div class="stat-card geo">
+      <div class="label">Verified Locations</div>
+      <div class="value" id="verified-count">—</div>
+    </div>
+  </div>
+
+  <!-- ── Sentiment Charts ────────────────────────────────────── -->
+  <div class="section-title">Sentiment Analysis</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Overall Sentiment Distribution</h3>
+      <canvas id="pieChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Sentiment Comparison by Outlet</h3>
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Geographic Charts ───────────────────────────────────── -->
+  <div class="section-title">Geographic & Language Analysis</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Language Distribution of Comments</h3>
+      <canvas id="languageChart"></canvas>
+      <div id="lang-placeholder" class="placeholder" style="display:none;">
+        Language data not yet available. Run scripts/05_language.py first.
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Regional Distribution of Commenters</h3>
+      <canvas id="regionalChart"></canvas>
+      <div id="geo-placeholder" class="placeholder" style="display:none;">
+        Geographic data not yet available. Run scripts/06_geo_lookup.py first.
+      </div>
+      <p class="geo-note" id="geo-coverage"></p>
+    </div>
+    <div class="chart-card full-width">
+      <h3>Top Countries — Verified Commenter Locations</h3>
+      <canvas id="countryChart" style="max-height: 360px;"></canvas>
+      <div id="country-placeholder" class="placeholder" style="display:none;">
+        Country data not yet available. Run scripts/06_geo_lookup.py first.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Comment Browser ─────────────────────────────────────── -->
+  <div class="section-title" style="padding-bottom: 12px;">Comment Browser</div>
+  <div class="filters">
+    <label>Sentiment:</label>
+    <select id="sentimentFilter" onchange="loadComments(1)">
+      <option value="all">All</option>
+      <option value="Positive">Positive</option>
+      <option value="Negative">Negative</option>
+      <option value="Neutral">Neutral</option>
+    </select>
+    <label>Outlet:</label>
+    <select id="outletFilter" onchange="loadComments(1)">
+      <option value="all">All Outlets</option>
+      <option value="BBC">BBC</option>
+      <option value="Al_Jazeera">Al Jazeera</option>
+      <option value="CHANNELS">Channels TV</option>
+      <option value="TVC">TVC</option>
+    </select>
+  </div>
+
+  <div class="comments-section">
+    <div id="comments-list"></div>
+    <div class="pagination">
+      <button onclick="prevPage()">Previous</button>
+      <span id="page-info" style="color:#aaa; padding: 8px 16px;"></span>
+      <button onclick="nextPage()">Next</button>
+    </div>
+  </div>
+
+  <script>
+    let currentPage  = 1;
+    let totalComments = 0;
+    const perPage    = 20;
+
+    // ── Summary & Sentiment Charts ──────────────────────────────
+    async function loadSummary() {
+      try {
+        const res  = await fetch('/api/summary');
+        const data = await res.json();
+
+        document.getElementById('total').textContent       = data.total_comments;
+        document.getElementById('pos-count').textContent   = data.sentiment_counts.Positive || 0;
+        document.getElementById('neg-count').textContent   = data.sentiment_counts.Negative || 0;
+        document.getElementById('avg-compound').textContent = data.average_compound;
+
+        // Pie chart
+        new Chart(document.getElementById('pieChart'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Positive', 'Negative', 'Neutral'],
+            datasets: [{
+              data: [
+                data.sentiment_counts.Positive || 0,
+                data.sentiment_counts.Negative || 0,
+                data.sentiment_counts.Neutral  || 0
+              ],
+              backgroundColor: ['#27AE60', '#E74C3C', '#F39C12'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            plugins: { legend: { labels: { color: '#ccc' } } }
+          }
         });
+
+        // Bar chart — outlet comparison
+        const outlets = Object.keys(data.by_outlet);
+        const sentimentTypes = ['Positive', 'Negative', 'Neutral'];
+        const barColors = { Positive: '#27AE60', Negative: '#E74C3C', Neutral: '#F39C12' };
+
+        new Chart(document.getElementById('barChart'), {
+          type: 'bar',
+          data: {
+            labels: outlets,
+            datasets: sentimentTypes.map(s => ({
+              label: s,
+              backgroundColor: barColors[s],
+              data: outlets.map(o => data.by_outlet[o][s] || 0)
+            }))
+          },
+          options: {
+            plugins: { legend: { labels: { color: '#ccc' } } },
+            scales: {
+              x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+              y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+            }
+          }
+        });
+
+      } catch (err) {
+        console.error('Summary load error:', err);
+      }
     }
 
-    // Load geographic data
-    const geoRes = await fetch('/api/geo');
-    const geoData = await geoRes.json();
+    // ── Geographic & Language Charts ────────────────────────────
+    async function loadGeoData() {
 
-    if (!geoData.error) {
-        document.getElementById('verified-count').textContent =
+      // Language chart
+      try {
+        const langRes  = await fetch('/api/language');
+        const langData = await langRes.json();
+
+        if (langData.available) {
+          new Chart(document.getElementById('languageChart'), {
+            type: 'bar',
+            data: {
+              labels: langData.labels,
+              datasets: [{
+                label: 'Comments',
+                data:  langData.values,
+                backgroundColor: '#8E44AD',
+                borderWidth: 0
+              }]
+            },
+            options: {
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { ticks: { color: '#aaa', maxRotation: 30 }, grid: { color: '#333' } },
+                y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+              }
+            }
+          });
+        } else {
+          document.getElementById('languageChart').style.display = 'none';
+          document.getElementById('lang-placeholder').style.display = 'flex';
+        }
+      } catch (err) {
+        console.error('Language chart error:', err);
+        document.getElementById('languageChart').style.display = 'none';
+        document.getElementById('lang-placeholder').style.display = 'flex';
+      }
+
+      // Regional and country charts
+      try {
+        const geoRes  = await fetch('/api/geo');
+        const geoData = await geoRes.json();
+
+        if (geoData.available) {
+          document.getElementById('verified-count').textContent =
             geoData.verified + ' (' + geoData.coverage_pct + '%)';
 
-        document.getElementById('geo-coverage').textContent =
+          document.getElementById('geo-coverage').textContent =
             'Based on ' + geoData.verified + ' of ' + geoData.total +
             ' commenters with verified country data (' + geoData.coverage_pct + '%)';
 
-        // Regional pie chart
-        new Chart(document.getElementById('regionalChart'), {
-            type: 'doughnut',
-            data: {
+          // Regional doughnut chart
+          if (geoData.regions.labels.length > 0) {
+            new Chart(document.getElementById('regionalChart'), {
+              type: 'doughnut',
+              data: {
                 labels: geoData.regions.labels,
                 datasets: [{
-                    data: geoData.regions.values,
-                    backgroundColor: [
-                        '#2E86AB','#27AE60','#E74C3C','#F39C12',
-                        '#8E44AD','#1ABC9C','#E67E22','#2C3E50'
-                    ],
-                    borderWidth: 0
+                  data: geoData.regions.values,
+                  backgroundColor: [
+                    '#2E86AB','#27AE60','#E74C3C','#F39C12',
+                    '#8E44AD','#1ABC9C','#E67E22','#2C3E50'
+                  ],
+                  borderWidth: 0
                 }]
-            },
-            options: {
+              },
+              options: {
                 plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: { color: '#ccc', font: { size: 11 } }
-                    }
+                  legend: {
+                    position: 'right',
+                    labels: { color: '#ccc', font: { size: 11 } }
+                  }
                 }
-            }
-        });
-    }
-}
-      const res = await fetch('/api/summary'); 
-      const data = await res.json(); 
-  
-      document.getElementById('total').textContent = data.total_comments; 
-      document.getElementById('pos-count').textContent = data.sentiment_counts.Positive || 0; 
-      document.getElementById('neg-count').textContent = data.sentiment_counts.Negative || 0; 
-      document.getElementById('avg-compound').textContent = data.average_compound; 
-  
-      // Pie Chart 
-      new Chart(document.getElementById('pieChart'), { 
-        type: 'doughnut', 
-        data: { 
-          labels: ['Positive', 'Negative', 'Neutral'], 
-          datasets: [{ data: [ 
-            data.sentiment_counts.Positive || 0, 
-            data.sentiment_counts.Negative || 0, 
-            data.sentiment_counts.Neutral  || 0 
-          ], backgroundColor: ['#27AE60', '#E74C3C', '#F39C12'], borderWidth: 0 }] 
-        }, 
-        options: { plugins: { legend: { labels: { color: '#ccc' } } } } 
-      }); 
-  
-      // Bar Chart
-const outlets = Object.keys(data.by_outlet);
-const sentimentTypes = ['Positive', 'Negative', 'Neutral'];
-const barColors = {
-    'Positive': '#27AE60',
-    'Negative': '#E74C3C',
-    'Neutral':  '#F39C12'
-};
+              }
+            });
+          } else {
+            document.getElementById('regionalChart').style.display = 'none';
+            document.getElementById('geo-placeholder').style.display = 'flex';
+          }
 
-new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    data: {
-        labels: outlets,
-        datasets: sentimentTypes.map(s => ({
-            label: s,
-            backgroundColor: barColors[s],
-            data: outlets.map(o => data.by_outlet[o][s] || 0)
-        }))
-    },
-    options: {
-        plugins: { legend: { labels: { color: '#ccc' } } },
-        scales: {
-            x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
-            y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+          // Top countries horizontal bar chart
+          if (geoData.countries.labels.length > 0) {
+            new Chart(document.getElementById('countryChart'), {
+              type: 'bar',
+              data: {
+                labels: geoData.countries.labels,
+                datasets: [{
+                  label: 'Commenters',
+                  data:  geoData.countries.values,
+                  backgroundColor: '#2E86AB',
+                  borderWidth: 0
+                }]
+              },
+              options: {
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                  y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+              }
+            });
+          } else {
+            document.getElementById('countryChart').style.display = 'none';
+            document.getElementById('country-placeholder').style.display = 'flex';
+          }
+
+        } else {
+          // Geo data not available — show placeholders
+          document.getElementById('regionalChart').style.display = 'none';
+          document.getElementById('geo-placeholder').style.display = 'flex';
+          document.getElementById('countryChart').style.display = 'none';
+          document.getElementById('country-placeholder').style.display = 'flex';
+          document.getElementById('verified-count').textContent = 'N/A';
         }
+
+      } catch (err) {
+        console.error('Geo chart error:', err);
+      }
     }
-});
-    } 
-  
-    async function loadComments(page) { 
-      currentPage = page; 
-      const sentiment = document.getElementById('sentimentFilter').value; 
-      const outlet = document.getElementById('outletFilter').value; 
-      const res = await fetch( 
-        `/api/comments?sentiment=${sentiment}&outlet=${outlet}&page=${page}` 
-      ); 
-      const data = await res.json(); 
-      totalComments = data.total; 
-  
-      const list = document.getElementById('comments-list'); 
-      list.innerHTML = data.comments.map(c => ` 
-        <div class='comment-card ${c.sentiment_label}'> 
-          <div class='comment-meta'> 
-            <span class='badge ${c.sentiment_label}'>${c.sentiment_label}</span> 
-            <span>${c.outlet}</span> 
-            <span class='compound-score'>Score: ${c.score_compound.toFixed(3)}</span> 
-            <span>Likes: ${c.likes}</span> 
-          </div> 
-          <div class='comment-text'>${c.text}</div> 
-        </div> 
-      `).join(''); 
 
-const totalPages = Math.ceil(totalComments / 20); 
-document.getElementById('page-info').textContent = 
-`Page ${page} of ${totalPages} (${totalComments} results)`; 
-} 
-function prevPage() { 
-if (currentPage > 1) loadComments(currentPage - 1); 
-} 
-function nextPage() { 
-const totalPages = Math.ceil(totalComments / 20); 
-if (currentPage < totalPages) loadComments(currentPage + 1); 
-}
+    // ── Comment Browser ─────────────────────────────────────────
+    async function loadComments(page) {
+      currentPage = page;
+      const sentiment = document.getElementById('sentimentFilter').value;
+      const outlet    = document.getElementById('outletFilter').value;
 
-// Initialise
-loadSummary();
-loadComments(1);
-loadGeoData(); 
+      try {
+        const res  = await fetch(
+          `/api/comments?sentiment=${sentiment}&outlet=${outlet}&page=${page}`
+        );
+        const data = await res.json();
+        totalComments = data.total;
 
-</script> 
-</body> 
+        const list = document.getElementById('comments-list');
+        list.innerHTML = data.comments.map(c => `
+          <div class="comment-card ${c.sentiment_label}">
+            <div class="comment-meta">
+              <span class="badge ${c.sentiment_label}">${c.sentiment_label}</span>
+              <span>${c.outlet}</span>
+              <span class="compound-score">Score: ${Number(c.score_compound).toFixed(3)}</span>
+              <span>Likes: ${c.likes}</span>
+            </div>
+            <div class="comment-text">${c.text}</div>
+          </div>
+        `).join('');
+
+        const totalPages = Math.ceil(totalComments / 20);
+        document.getElementById('page-info').textContent =
+          `Page ${page} of ${totalPages} (${totalComments} results)`;
+
+      } catch (err) {
+        console.error('Comments load error:', err);
+      }
+    }
+
+    function prevPage() {
+      if (currentPage > 1) loadComments(currentPage - 1);
+    }
+    function nextPage() {
+      const totalPages = Math.ceil(totalComments / 20);
+      if (currentPage < totalPages) loadComments(currentPage + 1);
+    }
+
+    // ── Initialise ──────────────────────────────────────────────
+    loadSummary();
+    loadComments(1);
+    loadGeoData();
+  </script>
+</body>
 </html>
