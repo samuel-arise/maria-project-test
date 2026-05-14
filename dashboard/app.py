@@ -2,9 +2,14 @@ import os
 import json 
 import pandas as pd 
 from flask import Flask, render_template, jsonify, request 
-  
+
 app = Flask(__name__) 
-  
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+# Then load your dataframe like this 
+
+df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'cleaned', 'comments_sentiment.csv'))
+
 # Load sentiment data once when the server starts 
 df = pd.read_csv('data/cleaned/comments_sentiment.csv') 
   
